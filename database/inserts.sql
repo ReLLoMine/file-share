@@ -41,8 +41,8 @@ insert into file_access_lvl (name, "level")
     ) limit 1;
 
 -- add guest user
-insert into fs_user (id, email, name, password, id_role)
-    select * from (select 1, 'guest@mail.com', 'guest', 'password', (select id from role where name = 'guest')) as tmp
+insert into fs_user (email, name, password, id_role)
+    select * from (select 'guest@mail.com', 'guest', 'password', (select id from role where name = 'guest')) as tmp
     where not exists (
         select * from fs_user where id = 1 and email = 'guest@mail.com' and name = 'guest' and password = 'password' and id_role = (select id from role where name = 'guest')
     ) limit 1;

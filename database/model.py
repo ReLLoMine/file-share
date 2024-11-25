@@ -65,6 +65,8 @@ class Model:
         return self.__dict__.get('_uid', 'id')
 
     def get_uid(self):
+        if isinstance(self.get_uid_cols(), tuple):
+            return [self.__dict__[key] for key in self.get_uid_cols()]
         return self.__dict__[self.__dict__.get('_uid', 'id')]
 
     def get_serial(self):
@@ -99,7 +101,8 @@ class Model:
     def delete(self):
         cur = self.__conn.cursor()
         qry = f"delete from {self.get_table()} where "
-        if isinstance(self.get_cols(), tuple):
+
+        if isinstance(self.get_uid_cols(), tuple):
             qry += ' and '.join([f"{key} = {value}" for key, value in zip(self.get_uid_cols(), self.get_values())])
         else:
             qry += f"{self.get_uid_cols()} = {self.get_uid()}"
@@ -114,7 +117,7 @@ class Model:
         cur = self.__conn.cursor()
         qry = f"update {self.get_table()} set {', '.join([f'{key} = {wrap_str(value)}' for key, value in zip(self.get_cols(), self.get_values())])} where "
 
-        if isinstance(self.get_cols(), tuple):
+        if isinstance(self.get_uid_cols(), tuple):
             qry += ' and '.join([f"{key} = {value}" for key, value in zip(self.get_uid_cols(), self.get_values())])
         else:
             qry += f"{self.get_uid_cols()} = {self.get_uid()}"

@@ -80,7 +80,7 @@ class FileAccessLvl(model.Model):
 class FileAccess(model.Model):
     def __init__(self):
         super().__init__()
-        self._uid = ("id_user", "id_file")
+        self._uid = "id_user", "id_file"
         self._table = "file_access"
         self._serial = None
 

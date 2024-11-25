@@ -53,7 +53,10 @@ def auth_post():
     else:
         data = request.get_json()
     user = models.User()
-    session['user'] = user.authenticate(data.get('email'), utils.digest_password(data.get('password'))).dict()
+    result = user.authenticate(data.get('email'), utils.digest_password(data.get('password')))
+    if not result:
+        return {'error': 'Invalid credentials'}, 401
+    session['user'] = result.dict()
     return redirect('/user')
 
 
@@ -129,6 +132,17 @@ def patch_user():
     return redirect('/user')
 
 
+@app.delete('/user')
+def delete_user():
+    role = get_current_user_role()
+    if role == guest_role:
+        return {'error': 'Unauthorized'}, 401
+
+    user = get_current_user()
+    user.delete()
+    return redirect('/user')
+
+
 @app.get('/user/<int:id>')
 def get_user_by_id(id):
     role = get_current_user_role()
@@ -145,7 +159,7 @@ def get_user_by_id(id):
 
 
 @app.delete('/user/<int:id>')
-def delete_user(id):
+def delete_user_by_id(id):
     role = get_current_user_role()
     if role.level > admin_role.level:
         return {'error': 'Unauthorized'}, 401
@@ -349,11 +363,62 @@ def add_file_access_lvl(id):
 
     data = request.get_json()
     access = models.FileAccess()
+    if data.get('id_user') is None:
+        access.id_user = models.User().get_user_by_email(data.get('email')).id
+    else:
+        access.id_user = data.get('id_user')
+    access.id_file = file.id
+    if data.get('id_access_lvl') is None:
+        access.id_access_lvl = models.FileAccessLvl().get_access_lvl_by_name(data.get('access')).id
+    else:
+        access.id_access_lvl = data.get('id_access_lvl')
+
+    access.insert()
+
+    return redirect('/file/' + str(id) + '/can_access')
+
+
+@app.patch('/file/<int:id>/access_lvl')
+def patch_file_access_lvl(id):
+    user = get_current_user()
+    file = models.File()
+    file = file[id]
+
+    if not file:
+        return {'error': 'File not found'}, 404
+
+    if file.get_access_lvl(user).level < owner_file_access_lvl.level:
+        return {'error': 'Unauthorized'}, 401
+
+    data = request.get_json()
+    access = models.FileAccess()
     access.id_user = data.get('id_user')
     access.id_file = file.id
     access.id_access_lvl = data.get('id_access_lvl')
 
-    access.insert()
+    access.patch()
+
+    return redirect('/file/' + str(id) + '/can_access')
+
+
+@app.delete('/file/<int:id>/access_lvl')
+def delete_file_access_lvl(id):
+    user = get_current_user()
+    file = models.File()
+    file = file[id]
+
+    if not file:
+        return {'error': 'File not found'}, 404
+
+    if file.get_access_lvl(user).level < owner_file_access_lvl.level:
+        return {'error': 'Unauthorized'}, 401
+
+    data = request.get_json()
+    access = models.FileAccess()
+    access.id_user = data.get('id_user')
+    access.id_file = file.id
+
+    access.delete()
 
     return redirect('/file/' + str(id) + '/can_access')
 
