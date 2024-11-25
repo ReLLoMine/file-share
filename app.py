@@ -17,19 +17,23 @@ write_file_access_lvl = models.FileAccessLvl().get_access_lvl_by_name("write")
 delete_file_access_lvl = models.FileAccessLvl().get_access_lvl_by_name("delete")
 owner_file_access_lvl = models.FileAccessLvl().get_access_lvl_by_name("owner")
 
+
 def get_current_user():
     user = models.User()
     if 'user' not in session:
         return user.get_guest()
     return user[session.get('user').get('id')]
 
+
 def get_current_user_role():
     user = get_current_user()
     return user.get_role()
 
+
 @app.get('/')
 def hello_world():
     return redirect('/user')
+
 
 @app.get('/auth')
 def auth_get():
@@ -41,6 +45,7 @@ def auth_get():
         </form>
     '''
 
+
 @app.post('/auth')
 def auth_post():
     if request.content_type != 'application/json':
@@ -51,15 +56,18 @@ def auth_post():
     session['user'] = user.authenticate(data.get('email'), utils.digest_password(data.get('password'))).dict()
     return redirect('/user')
 
+
 @app.get('/logout')
 def logout():
     session.pop('user', None)
     return redirect('/user')
 
+
 @app.get('/role')
 def get_role():
     role = get_current_user_role()
     return role.dict()
+
 
 @app.get('/roles')
 def get_roles():
@@ -69,10 +77,12 @@ def get_roles():
 
     return [o.dict() for o in role.fetch_all()]
 
+
 @app.get('/user')
 def get_user():
     user = get_current_user()
     return user.dict()
+
 
 @app.get('/users')
 def get_users():
@@ -82,6 +92,7 @@ def get_users():
 
     user = models.User()
     return [o.dict() for o in user.fetch_all()]
+
 
 @app.post('/user')
 def add_user():
@@ -98,6 +109,7 @@ def add_user():
     user.insert()
 
     return redirect('/user')
+
 
 @app.patch('/user')
 def patch_user():
@@ -116,6 +128,7 @@ def patch_user():
     user.patch()
     return redirect('/user')
 
+
 @app.get('/user/<int:id>')
 def get_user_by_id(id):
     role = get_current_user_role()
@@ -129,6 +142,7 @@ def get_user_by_id(id):
         return {'error': 'User not found'}, 404
 
     return user.dict()
+
 
 @app.delete('/user/<int:id>')
 def delete_user(id):
@@ -145,6 +159,7 @@ def delete_user(id):
     user.delete()
 
     return redirect('/user')
+
 
 @app.patch('/user/<int:id>')
 def patch_user_by_id(id):
@@ -170,6 +185,7 @@ def patch_user_by_id(id):
 
     return redirect('/user/' + str(id))
 
+
 @app.get('/files')
 def get_file():
     role = get_current_user_role()
@@ -182,6 +198,7 @@ def get_file():
             return [o.dict() for o in get_current_user().get_files()]
         case _:
             return {'error': 'Unauthorized'}, 401
+
 
 @app.get('/file/<int:id>')
 def get_file_by_id(id):
@@ -197,6 +214,7 @@ def get_file_by_id(id):
 
     return file.dict()
 
+
 @app.get('/file/<int:id>/download')
 def download_file(id):
     user = get_current_user()
@@ -211,6 +229,7 @@ def download_file(id):
 
     return send_file(f'data/{file.id_owner}/{file.name}', as_attachment=True)
 
+
 @app.post('/file')
 def add_file():
     user = get_current_user()
@@ -224,20 +243,21 @@ def add_file():
 
         access = models.FileAccess()
         access.id_user = user.id
-        access.id_file = file_db.id
         access.id_access_lvl = owner_file_access_lvl.id
 
         if os.path.exists(f'data/{file_db.id_owner}/{file.filename}'):
             return {'error': 'File already exists'}, 400
 
-        access.insert()
         file_db.insert()
+        access.id_file = file_db.id
+        access.insert()
 
         os.makedirs(os.path.dirname(f'data/{file_db.id_owner}/'), exist_ok=True)
         with open(f'data/{file_db.id_owner}/{file.filename}', 'wb') as f:
             f.write(file.read())
 
     return redirect('/files')
+
 
 @app.delete('/file/<int:id>')
 def delete_file(id):
@@ -256,6 +276,7 @@ def delete_file(id):
 
     file.delete()
     return redirect('/files')
+
 
 @app.patch('/file/<int:id>')
 def patch_file_by_id(id):
@@ -279,6 +300,7 @@ def patch_file_by_id(id):
 
     return redirect('/file/' + str(id))
 
+
 @app.get('/file/<int:id>/access_lvl')
 def get_file_access_lvl(id):
     user = get_current_user()
@@ -289,6 +311,7 @@ def get_file_access_lvl(id):
         return {'error': 'File not found'}, 404
 
     return file.get_access_lvl(user).dict()
+
 
 @app.get('/file/<int:id>/can_access')
 def get_file_who_can_access(id):
@@ -303,12 +326,14 @@ def get_file_who_can_access(id):
         return {'error': 'Unauthorized'}, 401
 
     access = models.FileAccess()
+
     def wrap(af):
         user_ = models.User()
         user_ = user_[af.id_user]
         return {"name": user_.name, "email": user_.email, "access": af.get_access_lvl().name}
 
     return [wrap(o) for o in access.get_all_by_file(id)]
+
 
 @app.post('/file/<int:id>/access_lvl')
 def add_file_access_lvl(id):
@@ -331,6 +356,7 @@ def add_file_access_lvl(id):
     access.insert()
 
     return redirect('/file/' + str(id) + '/can_access')
+
 
 if __name__ == '__main__':
     app.run()

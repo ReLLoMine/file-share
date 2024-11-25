@@ -16,6 +16,7 @@ class Role(model.Model):
         self.apply_data(list(*cur))
         return self
 
+
 class User(model.Model):
     def __init__(self):
         super().__init__()
@@ -58,7 +59,6 @@ class User(model.Model):
         return self.id > 0
 
 
-
 class FileAccessLvl(model.Model):
     def __init__(self):
         super().__init__()
@@ -76,11 +76,13 @@ class FileAccessLvl(model.Model):
         self.apply_data(list(*cur))
         return self
 
+
 class FileAccess(model.Model):
     def __init__(self):
         super().__init__()
         self._uid = ("id_user", "id_file")
         self._table = "file_access"
+        self._serial = None
 
         self.id_user: int = 0
         self.id_file: int = 0
@@ -104,6 +106,7 @@ class FileAccess(model.Model):
     def __bool__(self):
         return self.id_user > 0
 
+
 class File(model.Model):
     def __init__(self):
         super().__init__()
@@ -118,15 +121,15 @@ class File(model.Model):
 
     def give_access(self, user, access_lvl):
         access = FileAccess()
-        access.id_user = user.id if user is not None else 0
+        access.id_user = user.id
         access.id_file = self.id
         access.id_access_lvl = access_lvl.id
         access.insert()
 
     def get_access_lvl(self, user):
-        if user.id == self.id_owner: # owner
+        if user.id == self.id_owner:  # owner
             return FileAccessLvl().get_access_lvl_by_name("owner")
-        if user.get_role().level == Role().get_role_by_name("admin").level: # admin
+        if user.get_role().level == Role().get_role_by_name("admin").level:  # admin
             return FileAccessLvl().get_access_lvl_by_name("delete")
         access = FileAccess()
         return access[user.id, self.id].get_access_lvl()

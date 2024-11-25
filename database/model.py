@@ -17,7 +17,8 @@ class Model:
             self.set_values(dict(zip(self.get_cols(), list(*cur))))
         else:
             cur = self.__conn.cursor()
-            cur.execute(f"select {', '.join(self.get_cols())} from {self.get_table()} where {self.get_uid_cols()} = {index}")
+            cur.execute(
+                f"select {', '.join(self.get_cols())} from {self.get_table()} where {self.get_uid_cols()} = {index}")
             self.__conn.commit()
             self.set_values(dict(zip(self.get_cols(), list(*cur))))
         return self
@@ -32,14 +33,14 @@ class Model:
         return list(
             map(lambda y: y[0],
                 filter(lambda x: not (x[0].startswith("_") or callable(x[1]) or x[0] in self.__exclude__ or (
-                            no_id and x[0] == self.get_uid_cols())),
+                        no_id and x[0] == self.get_uid_cols())),
                        self.__dict__.items())))
 
     def get_values(self, no_id=False):
         return list(
             map(lambda y: y[1],
                 filter(lambda x: not (x[0].startswith("_") or callable(x[1]) or x[0] in self.__exclude__ or (
-                            no_id and x[0] == self.get_uid_cols())),
+                        no_id and x[0] == self.get_uid_cols())),
                        self.__dict__.items())))
 
     def set_values(self, data):
@@ -54,7 +55,6 @@ class Model:
     def apply_data(self, data):
         return self.set_values(dict(zip(self.get_cols(), data)))
 
-
     def dict(self):
         return dict(zip(self.get_cols(), self.get_values()))
 
@@ -66,6 +66,9 @@ class Model:
 
     def get_uid(self):
         return self.__dict__[self.__dict__.get('_uid', 'id')]
+
+    def get_serial(self):
+        return self.__dict__.get('_serial', 'id')
 
     def select(self, where=None):
         qry = f"select {', '.join(self.get_cols())} from {self.get_table()}"
@@ -84,8 +87,13 @@ class Model:
             return "'" + str(string) + "'" if isinstance(string, str) else str(string)
 
         cur = self.__conn.cursor()
-        cur.execute(f"insert into {self.get_table()} ({', '.join(self.get_cols(True))}) values ({', '.join(map(wrap_str, self.get_values(True)))})")
+        cur.execute(
+            f"insert into {self.get_table()} ({', '.join(self.get_cols(True))}) values ({', '.join(map(wrap_str, self.get_values(True)))})" + (f" returning {self.get_serial()}" if self.get_serial() else "")
+        )
+
         self.__conn.commit()
+        if self.get_serial():
+            self.__dict__[self.get_serial()] = list(*cur)[0]
         return self
 
     def delete(self):
@@ -98,7 +106,6 @@ class Model:
 
         cur.execute(qry)
         self.__conn.commit()
-
 
     def patch(self):
         def wrap_str(string):
