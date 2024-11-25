@@ -43,7 +43,10 @@ def auth_get():
 
 @app.post('/auth')
 def auth_post():
-    data = request.get_json()
+    if request.content_type != 'application/json':
+        data = {k: v for k, v in request.form.items()}
+    else:
+        data = request.get_json()
     user = models.User()
     session['user'] = user.authenticate(data.get('email'), utils.digest_password(data.get('password'))).dict()
     return redirect('/user')
