@@ -1,3 +1,5 @@
+from io import BytesIO
+
 import pytest
 from app import app as flask_app
 
@@ -6,7 +8,6 @@ from app import app as flask_app
 def app():
     app = flask_app
     app.testing = True
-
     yield app
 
 
@@ -47,20 +48,34 @@ def test_user_auth(client):
 
 
 @pytest.mark.dependency(depends=['test_user_auth'])
-def test_user_logout(client):
-    response = client.get('/logout')
+def test_upload(client):
+    client.post('/auth', json={'email': 'test@mail.com', 'password': 'password'})
+    response = client.post('/file', data={
+        'file': (BytesIO(open('tests/test_user.py', 'rb').read()), 'test_user.py')},
+                           content_type='multipart/form-data')
     assert response.status_code == 302
-    assert response.headers['Location'].endswith('/user')
+    assert response.headers['Location'].endswith('/files')
 
 
-@pytest.mark.dependency(depends=['test_user_logout'])
+@pytest.mark.dependency(depends=['test_upload'])
+def test_download(client):
+    client.post('/auth', json={'email': 'test@mail.com', 'password': 'password'})
+    response = client.get('/files')
+    assert response.status_code == 200
+    file_id = response.json[0]['id']
+    response = client.get(f'/file/{file_id}/download')
+    assert response.status_code == 200
+    assert response.data == open('tests/test_user.py', 'rb').read()
+
+
+@pytest.mark.dependency(depends=['test_download'])
 def test_auth_fail(client):
     response = client.post('/auth', json={'email': 'notexist', 'password': 'notexist'})
     assert response.status_code == 401
     assert response.json == {'error': 'Invalid credentials'}
 
 
-@pytest.mark.dependency(depends=['test_user_logout'])
+@pytest.mark.dependency(depends=['test_auth_fail'])
 def test_user_delete(client):
     client.post('/auth', json={'email': 'test@mail.com', 'password': 'password'})
     response = client.delete('/user')

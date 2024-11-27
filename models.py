@@ -28,6 +28,15 @@ class User(model.Model):
         self.password: str = ""
         self.id_role: int = 0
 
+    def delete(self):
+        files = File().get_all_by_owner_id(self.id)
+        for file in files:
+            file.delete()
+        accesses = FileAccess().get_all_by_user(self.id)
+        for access in accesses:
+            access.delete()
+        super().delete()
+
     def authenticate(self, email, password):
         conn = self.get_conn()
         cur = conn.cursor()
@@ -103,6 +112,9 @@ class FileAccess(model.Model):
     def get_all_by_file(self, id_file):
         return self.fetch_all(f"id_file = {id_file}")
 
+    def get_all_by_user(self, id_user):
+        return self.fetch_all(f"id_user = {id_user}")
+
     def __bool__(self):
         return self.id_user > 0
 
@@ -114,6 +126,15 @@ class File(model.Model):
         self.id: int = 0
         self.name: str = ""
         self.id_owner: int = 0
+
+    def delete(self):
+        accesses = FileAccess().get_all_by_file(self.id)
+        for access in accesses:
+            access.delete()
+        super().delete()
+
+    def get_all_by_owner_id(self, owner_id):
+        return self.fetch_all(f"id_owner = {owner_id}")
 
     def get_owner(self):
         user = User()

@@ -139,7 +139,17 @@ def delete_user():
         return {'error': 'Unauthorized'}, 401
 
     user = get_current_user()
+
+    files = models.File()
+    files = files.get_all_by_owner_id(user.id)
+    for file in files:
+        if os.path.exists(f'data/{file.id_owner}/{file.name}'):
+            os.remove(f'data/{file.id_owner}/{file.name}')
+
     user.delete()
+
+    session.pop('user', None)
+
     return redirect('/user')
 
 
@@ -169,6 +179,12 @@ def delete_user_by_id(id):
 
     if not user:
         return {'error': 'User not found'}, 404
+
+    files = models.File()
+    files = files.get_all_by_owner_id(user.id)
+    for file in files:
+        if os.path.exists(f'data/{file.id_owner}/{file.name}'):
+            os.remove(f'data/{file.id_owner}/{file.name}')
 
     user.delete()
 
@@ -350,7 +366,7 @@ def get_file_who_can_access(id):
 
 
 @app.post('/file/<int:id>/access_lvl')
-def add_file_access_lvl(id):
+def add_file_access(id):
     user = get_current_user()
     file = models.File()
     file = file[id]
@@ -379,7 +395,7 @@ def add_file_access_lvl(id):
 
 
 @app.patch('/file/<int:id>/access_lvl')
-def patch_file_access_lvl(id):
+def patch_file_access(id):
     user = get_current_user()
     file = models.File()
     file = file[id]
@@ -402,7 +418,7 @@ def patch_file_access_lvl(id):
 
 
 @app.delete('/file/<int:id>/access_lvl')
-def delete_file_access_lvl(id):
+def delete_file_access(id):
     user = get_current_user()
     file = models.File()
     file = file[id]
