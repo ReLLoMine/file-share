@@ -1,7 +1,7 @@
-from database import model
+from database.model import Model
 
 
-class Role(model.Model):
+class Role(Model):
     def __init__(self):
         super().__init__()
         self.id: int = 0
@@ -17,7 +17,7 @@ class Role(model.Model):
         return self
 
 
-class User(model.Model):
+class User(Model):
     def __init__(self):
         super().__init__()
         self._table = "fs_user"
@@ -68,7 +68,7 @@ class User(model.Model):
         return self.id > 0
 
 
-class FileAccessLvl(model.Model):
+class FileAccessLvl(Model):
     def __init__(self):
         super().__init__()
         self._table = "file_access_lvl"
@@ -86,7 +86,7 @@ class FileAccessLvl(model.Model):
         return self
 
 
-class FileAccess(model.Model):
+class FileAccess(Model):
     def __init__(self):
         super().__init__()
         self._uid = "id_user", "id_file"
@@ -119,7 +119,7 @@ class FileAccess(model.Model):
         return self.id_user > 0
 
 
-class File(model.Model):
+class File(Model):
     def __init__(self):
         super().__init__()
 

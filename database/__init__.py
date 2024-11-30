@@ -1,6 +1,6 @@
-from database.db import *
-from database.model import *
+import database.db as db
+import database.model as model
 
-database = Database()
+database = db.Database()
 database.connect_db()
 database.init_db()

@@ -1,0 +1,18 @@
+digraph "packages" {
+rankdir=BT
+charset="utf-8"
+"file-share-course" [color="black", label=<file-share-course>, shape="box", style="solid"];
+"file-share-course.app" [color="black", label=<file-share-course.app>, shape="box", style="solid"];
+"file-share-course.database" [color="black", label=<file-share-course.database>, shape="box", style="solid"];
+"file-share-course.database.db" [color="black", label=<file-share-course.database.db>, shape="box", style="solid"];
+"file-share-course.database.model" [color="black", label=<file-share-course.database.model>, shape="box", style="solid"];
+"file-share-course.models" [color="black", label=<file-share-course.models>, shape="box", style="solid"];
+"file-share-course.utils" [color="black", label=<file-share-course.utils>, shape="box", style="solid"];
+"file-share-course.app" -> "file-share-course.database" [arrowhead="open", arrowtail="none"];
+"file-share-course.database" -> "file-share-course.database.model" [arrowhead="open", arrowtail="none"];
+"file-share-course.database" -> "file-share-course.database.db" [arrowhead="open", arrowtail="none"];
+"file-share-course.models" -> "file-share-course.database.model" [arrowhead="open", arrowtail="none"];
+"file-share-course" -> "file-share-course.app" [arrowhead="open", arrowtail="none"];
+"file-share-course.app" -> "file-share-course.models" [arrowhead="open", arrowtail="none"];
+"file-share-course.app" -> "file-share-course.utils" [arrowhead="open", arrowtail="none"];
+}
